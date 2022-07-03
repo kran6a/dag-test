@@ -1,0 +1,2 @@
+export const sleep = (ms: number): Promise<void>=>new Promise(r=>setTimeout(r, ms));
+export const chunk_string = (str: string, chunk_size: number): string[]=>str.split('').reduce((acc, rec, index) => ((index % chunk_size) || !(index)) ? acc.concat(rec) : acc.concat(',', rec), '').split(',');

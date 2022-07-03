@@ -1,0 +1,1 @@
+export const head = async ()=>({status: 200, body: '', headers: {'cache-control': 'private,max-age=300'}});

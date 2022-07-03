@@ -1,0 +1,27 @@
+{
+	"typeAcquisition": {
+		"enable": true
+	},
+	"compilerOptions": {
+		"strict": true,
+		"module": "esnext",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"target": "esNext",
+		"moduleResolution": "Node",
+		"paths": {
+			"#lib/*": 		["./src/lib/*.js"],
+			"#routes/*": 	["./routes/*.js"],
+			"#classes/*": 	["./src/classes/*.js"],
+			"#constants": 	["./src/constants/index.js"],
+			"#db":			["./src/db/index.js"],
+			"#vm":			["./src/lib/vm/index.js"],
+			"#routines": 	["./src/lib/vm/routines.js"]
+		}
+	},
+	"ts-node": {
+		"require": ["tsconfig-paths/register"],
+		"transpileOnly": true,
+		"files": true
+	}
+}
