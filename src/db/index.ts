@@ -1,7 +1,6 @@
 import level from 'level-rocksdb';
 import {createHash} from "crypto";
 import {rmSync} from "fs";
-import maybe from "#lib/functional/maybe";
 import {BALANCE_WIDTH_BITS, BASE_TOKEN, BALANCE_WIDTH_BYTES, BINARY_ZERO, BINARY_ZERO_STRING, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY, GENESIS_BALANCE, MAX_CAP, GENESIS_UNIT_HASH} from "#constants";
 import {bigint2word, bin2token, binary2bigint, buffer2string, fromJSON, reencode_string, string2buffer, toBigInt, toJSON} from "#lib/serde";
 import Pack from "#classes/Pack";
@@ -56,10 +55,14 @@ export class DB {
         this.cache.set(key, value);
         return this;
     }
-    get(key: string): Promise<string>{ //Does not check for transaction
+    async get(key: string): Promise<string>{ //Does not check for transaction
         if (this.cache.has(key))
             return <Promise<string>><unknown>this.cache.get(key);
-        return maybe(this.db.get(key), '');
+        try{
+            return await this.db.get(key);
+        } catch (e){
+            return '';
+        }
     }
     del(key: string){
         if (this.transaction) {
@@ -95,7 +98,12 @@ export class DB {
     }
     async get_token(hash: string): Promise<Option<{ hash: string, cap: bigint, burnable: boolean, issuers: string[], supply: bigint }>> {
         const final_hash: string = hash === BASE_TOKEN ? createHash('sha256').update('token_', 'utf8').update(hash, 'base64url').digest('binary') : reencode_string(hash, 'base64url', "binary");
-        const raw: string | undefined = await maybe(this.get(final_hash), undefined);
+        let raw: string | undefined;
+        try {
+            raw = await this.get(final_hash);
+        } catch (e) {
+            raw = undefined;
+        }
         if (!raw)
             return {err: "Token not found"};
         const parsed: ParsedToken = bin2token(string2buffer(raw, 'binary'));
@@ -124,10 +132,10 @@ export class DB {
         this.put(createHash('sha256').update('supply_', 'utf8').update(token,'base64url').digest('binary'), buffer2string(bigint2word(amount, BALANCE_WIDTH_BYTES), 'binary'));
     }
     get_channel(owner: string, key: string): Promise<string>{
-        return maybe(this.get(createHash('sha256').update('channel_', 'utf8').update(owner, 'hex').update(key, 'utf8').digest('binary')), '')
+            return this.get(createHash('sha256').update('channel_', 'utf8').update(owner, 'hex').update(key, 'utf8').digest('binary'))
     }
     get_channel_raw(hash: string): Promise<string>{
-        return maybe(this.get(hash))
+        return this.get(hash);
     }
     set_channel(owner: string, key: string, value: string){
         this.put(createHash('sha256').update('channel_', 'utf8').update(owner, 'hex').update(key, 'utf8').digest('binary'), value)
@@ -141,7 +149,12 @@ export class DB {
         this.put(bin_address, bin_pubkey);
     }
     async get_smart_contract(address: string): Promise<Uint8Array> {
-        const result: string = await maybe(this.get(reencode_string(address, 'hex', 'binary')));
+        let result: string | undefined;
+        try {
+            result = await this.get(reencode_string(address, 'hex', 'binary'))
+        } catch (e) {
+            result = undefined;
+        }
         if (!result)
             return BINARY_ZERO;
         return string2buffer(result, 'binary');
@@ -151,14 +164,24 @@ export class DB {
     }
     async get_staked_by_to(supporter: string, supportee: string): Promise<bigint> {
         const key: string = createHash('sha256').update('support_', 'utf8').update(supporter, 'hex').update('_', 'utf8').update(supportee, 'hex').digest('binary');
-        const raw: string = await maybe(this.get(key), BINARY_ZERO_STRING);
+        let raw: string;
+        try {
+            raw = await this.get(key);
+        } catch (e) {
+            raw = BINARY_ZERO_STRING;
+        }
         if (raw.length === 0)
             return 0n;
         return binary2bigint(Buffer.from(raw, 'binary'));
     }
     async get_support(address: string): Promise<bigint> {
         const key: string = createHash('sha256').update('supportee_', 'utf8').update(address, 'hex').digest('binary');
-        const raw: string = await maybe(this.get(key), BINARY_ZERO_STRING);
+        let raw: string;
+        try{
+            raw = await this.get(key)
+        } catch{
+           raw = BINARY_ZERO_STRING;
+        }
         if (raw.length === 0)
             return 0n;
         return binary2bigint(Buffer.from(raw, 'binary'));
@@ -253,7 +276,8 @@ export class DB {
 }
 const exp: DB = new DB(_db);
 export const db = exp;
-if (!await maybe(_db.get("milestone"))) {
+try {
+    await _db.get("milestone");
     await sleep(4200);
     await exp.initialize();
-}
+} catch (e) {}

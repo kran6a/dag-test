@@ -1,5 +1,4 @@
 import handle_incoming_pack from "#lib/handle_incoming_pack";
-import maybe from "#lib/functional/maybe";
 import {db} from "#db";
 import Pack from '#classes/Pack';
 import {buffer2string, string2buffer} from "#lib/serde";
@@ -15,12 +14,12 @@ const ipfs = await create({url: 'http://127.0.0.1:5001/api/v0', agent: new Agent
 console.info("IPFS started");
 await ipfs.pubsub.subscribe(`${NETWORK_ID}-pack`, async (msg)=>{
     log("Network", 'INFO', `We received a pack from the network with hash ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);
-    await maybe(handle_incoming_pack(msg.data, false));
+    await handle_incoming_pack(msg.data, false);
 });
 await ipfs.pubsub.subscribe(`${NETWORK_ID}-query`, async (msg)=>{
     log("Network", 'INFO', `We got queried for ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);
     const pack_hash: string = buffer2string(msg.data, 'base64url');
-    const pack: Option<Pack> = await maybe(db.get_pack(pack_hash));
+    const pack: Option<Pack> = await db.get_pack(pack_hash);
     return is_ok(pack) && ipfs.pubsub.publish(`${NETWORK_ID}-${pack_hash}`, pack.ok.binary());
 });
 
