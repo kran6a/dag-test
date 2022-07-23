@@ -2,7 +2,7 @@ import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db, get_state_hash} from "#db";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
-import {GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import Pack from "#classes/Pack";
 import secp256k1 from "secp256k1";
 import {buffer2string, string2buffer} from "#lib/serde";

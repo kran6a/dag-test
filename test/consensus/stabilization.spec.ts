@@ -1,7 +1,8 @@
 import {describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY, GENESIS_ACCOUNT_PUBKEY, PUBKEY_BYTE_LENGTH} from "#constants";
+import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY, PUBKEY_BYTE_LENGTH} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import Pack from "#classes/Pack";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {createHash, randomBytes} from "crypto";
@@ -28,7 +29,7 @@ describe('[Consensus] Stabilization', async function (){
         const {ok, err}: Option<string> = await handle_incoming_pack(pack.binary(), true);
         assert.isUndefined(err, "No error was produced");
         assert.strictEqual(ok, pack.r_hash, "The pack hash was returned");
-        const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(pack.r_hash);
+        const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>pack.r_hash);
         assert.isUndefined(db_err, "The pack was fetched from the DB");
         assert.isTrue(db_pack?.stable, "The pack is stable");
     });
@@ -38,7 +39,7 @@ describe('[Consensus] Stabilization', async function (){
         const {ok, err}: Option<string> = await handle_incoming_pack(pack.binary(), true);
         assert.isUndefined(err, "No error was produced");
         assert.strictEqual(ok, pack.r_hash, "The pack hash was returned");
-        const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(pack.r_hash);
+        const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>pack.r_hash);
         assert.isUndefined(db_err, "The pack was fetched from the DB");
         assert.isFalse(db_pack?.stable, "The pack is NOT stable");
     });
@@ -50,7 +51,7 @@ describe('[Consensus] Stabilization', async function (){
             const {ok, err}: Option<string> = await handle_incoming_pack(pack.binary(), true);
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, pack.r_hash, "The pack hash was returned");
-            const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(pack.r_hash);
+            const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>pack.r_hash);
             assert.isUndefined(db_err, "The pack was fetched from the DB");
             assert.isFalse(db_pack?.stable, "The pack is NOT stable");
         }
@@ -60,12 +61,12 @@ describe('[Consensus] Stabilization', async function (){
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, stabilizator_pack.r_hash, "The pack hash was returned");
             { //Check second pack
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(stabilizator_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>stabilizator_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isFalse(db_pack?.stable, "The second pack is NOT stable");
             }
             { //Check first pack
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isTrue(db_pack?.stable, "The first pack is stable");
             }
@@ -81,7 +82,7 @@ describe('[Consensus] Stabilization', async function (){
             const {ok, err}: Option<string> = await handle_incoming_pack(first_pack.binary(), true);
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, first_pack.r_hash, "The pack hash was returned");
-            const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(first_pack.r_hash);
+            const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>first_pack.r_hash);
             assert.isUndefined(db_err, "The pack was fetched from the DB");
             assert.isFalse(db_pack?.stable, "The pack is NOT stable");
         }
@@ -91,23 +92,23 @@ describe('[Consensus] Stabilization', async function (){
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, second_pack.r_hash, "The pack hash was returned");
             { //Check second pack
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(second_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>second_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isFalse(db_pack?.stable, "The second pack is NOT stable");
             }
         }
-        const third_pack: Pack = await new Pack().pay(COMMUNITY_ADDRESS, BASE_TOKEN, 11n).parent(second_pack.r_hash).parent(first_pack.r_hash).seal(account1.private_key);
+        const third_pack: Pack = await new Pack().pay(COMMUNITY_ADDRESS, BASE_TOKEN, 11n).parent(<string>second_pack.r_hash).parent(<string>first_pack.r_hash).seal(account1.private_key);
         { //Third pack stabilizes both packs
             const {ok, err}: Option<string> = await handle_incoming_pack(third_pack.binary(), true);
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, third_pack.r_hash, "The pack hash was returned");
             { //Check that second_pack is stable
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(second_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>second_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isTrue(db_pack?.stable, "The second pack is stable");
             }
             { //Check that first_pack is stable
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(first_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>first_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isTrue(db_pack?.stable, "The first pack is stable");
             }
@@ -125,7 +126,7 @@ describe('[Consensus] Stabilization', async function (){
             const {ok, err}: Option<string> = await handle_incoming_pack(first_pack.binary(), true);
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, first_pack.r_hash, "The pack hash was returned");
-            const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(first_pack.r_hash);
+            const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>first_pack.r_hash);
             assert.isUndefined(db_err, "The pack was fetched from the DB");
             assert.isFalse(db_pack?.stable, "The pack is NOT stable");
         }
@@ -135,7 +136,7 @@ describe('[Consensus] Stabilization', async function (){
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, second_pack.r_hash, "The pack hash was returned");
             { //Check second pack
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(second_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>second_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isFalse(db_pack?.stable, "The second pack is NOT stable");
             }
@@ -146,12 +147,12 @@ describe('[Consensus] Stabilization', async function (){
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, third_pack.r_hash, "The pack hash was returned");
             { //Check that second_pack is stable
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(second_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>second_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isTrue(db_pack?.stable, "The second pack is stable");
             }
             { //Check that first_pack is NOT stable
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(first_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>first_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isFalse(db_pack?.stable, "The first pack is NOT stable");
             }
@@ -162,7 +163,7 @@ describe('[Consensus] Stabilization', async function (){
             assert.isUndefined(err, "No error was produced");
             assert.strictEqual(ok, fourth_pack.r_hash, "The pack hash was returned");
             { //Check that first pack is now stable
-                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(first_pack.r_hash);
+                const {ok: db_pack, err: db_err}: Option<Pack> = await db.get_pack(<string>first_pack.r_hash);
                 assert.isUndefined(db_err, "The pack was fetched from the DB");
                 assert.isTrue(db_pack?.stable, "The first pack is stable");
             }

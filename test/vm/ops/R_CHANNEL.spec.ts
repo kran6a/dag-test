@@ -2,7 +2,8 @@ import {describe, it, beforeEach} from 'mocha';
 import {assert} from 'chai';
 import {EXCEPTIONS, OPS, Vm} from '#vm';
 import {buffer2string} from "#lib/serde";
-import {GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {GENESIS_ACCOUNT_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from '#db';
 import Pack from '#classes/Pack';
 import handle_incoming_pack from "#lib/handle_incoming_pack";
@@ -22,8 +23,8 @@ describe('[VM] R_CHANNEL', ()=>{
 
         const {ok, err}: Option<Uint8Array, EXCEPTIONS> = await vm.execute();
         assert.isUndefined(err, 'No error was produced');
-        assert.lengthOf(ok, 2, 'The value stored in the channel is 2 bytes long');
-        assert.strictEqual(buffer2string(ok, 'utf8'), '42', 'The value of that buffer is the value we pushed into the stack');
+        assert.lengthOf(<Uint8Array>ok, 2, 'The value stored in the channel is 2 bytes long');
+        assert.strictEqual(buffer2string(<Uint8Array>ok, 'utf8'), '42', 'The value of that buffer is the value we pushed into the stack');
         assert.isUndefined(vm.exception, 'VM produced no exception');
         assert.strictEqual(vm.pc, code.length, 'VM code tape was consumed');
         assert.lengthOf(vm.stack, 0, 'VM stack is empty');

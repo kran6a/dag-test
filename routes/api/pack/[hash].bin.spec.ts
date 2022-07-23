@@ -1,26 +1,30 @@
 import {describe, beforeEach, it} from 'mocha';
 import {assert} from 'chai';
-import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {BASE_TOKEN, COMMUNITY_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from '#db';
 import handle_incoming_pack from "#lib/handle_incoming_pack";
 import Pack from "#classes/Pack";
 import {get} from "./[hash].bin.js";
 import {randomBytes} from "crypto";
+import {is_ok} from "#lib/validation";
 
 describe('[API] [hash].json.ts', ()=>{
     let hash: string;
     beforeEach(async function(){
         await db.initialize();
         const pack: Pack = await new Pack().pay(COMMUNITY_ADDRESS, BASE_TOKEN, 100n).seal(GENESIS_ACCOUNT_PRIVKEY);
-        await handle_incoming_pack(pack.binary());
-        hash = pack.r_hash;
+        const opt: Option<string> = await handle_incoming_pack(pack.binary());
+        assert.isTrue(is_ok(opt), 'A pack was rejected');
+        hash = <string>pack.r_hash;
     });
     it('should match the generated pack', async function () {
         const response = await get({params: {hash}}) as { headers: { "content-length": number; "content-type": string; "cache-control": string }; body: Uint8Array; status: number };
         assert.deepStrictEqual(response.headers, {'cache-control': 'public,immutable', 'content-type': 'application/octet-stream', 'content-length': response.body.length}, 'Headers match');
         assert.strictEqual(response.status, 200, '200 status code was returned');
-        const {ok: pack, err: _} = await db.get_pack(hash);
-        const expected: Uint8Array = pack.binary();
+        const opt: Option<Pack> = await db.get_pack(hash);
+        assert.isTrue(is_ok(opt), 'The pack could not be found in the DB');
+        const expected: Uint8Array = (<Pack>opt.ok).binary();
         assert.deepStrictEqual(
             Array.from(response.body),
             Array.from(expected)

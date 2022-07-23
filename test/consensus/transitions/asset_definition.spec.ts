@@ -2,7 +2,8 @@ import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
-import {GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {GENESIS_ACCOUNT_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
 import Pack from "#classes/Pack";
 
@@ -17,13 +18,14 @@ describe('[Transitions] Asset definition', async function (){
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
         const token_hash: string = createHash('sha256').update('token_', 'utf8')
-        .update(pack.r_hash, 'base64url')
+        .update(<string>pack.r_hash, 'base64url')
         .update('_', 'utf8')
         .update(new Uint8Array([42]))
         .digest('base64url');
         const {ok: result_token} = await db.get_token(token_hash);
         assert.deepEqual(result_token, {cap: 200n, hash: token_hash, burnable: false, issuers: [GENESIS_ACCOUNT_ADDRESS], supply: 0n});
     });
+    //TODO check this
     //it('should default cap to MAX_CAP and burnable to false when omitted', async function () {
     //    const pack: RawPack = {
     //        author: net.stabilizers[0].address,

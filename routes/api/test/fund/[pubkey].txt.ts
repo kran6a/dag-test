@@ -1,5 +1,6 @@
 import Pack from "#classes/Pack";
-import {BASE_TOKEN, GENESIS_ACCOUNT_PRIVKEY, PUBKEY_BYTE_LENGTH} from "#constants";
+import {BASE_TOKEN, PUBKEY_BYTE_LENGTH} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
 
 let last_stabilization: number = 0;

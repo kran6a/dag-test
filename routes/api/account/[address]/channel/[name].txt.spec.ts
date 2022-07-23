@@ -2,7 +2,8 @@ import {describe, beforeEach, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from '#db';
 import {get} from "./[name].txt.js";
-import {GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {GENESIS_ACCOUNT_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import Pack from "#classes/Pack";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
 

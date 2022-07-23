@@ -1,6 +1,6 @@
 import handle_incoming_pack from "#lib/handle_incoming_pack";
 import Pack from "#classes/Pack";
-import {PRIVATE_KEY} from "#constants";
+import {PRIVATE_KEY} from "#secrets";
 
 //Sign and broadcast
 export const put: Endpoint = async ({request})=>{

@@ -1,45 +1,9 @@
-export const enum TRANSITION_TYPES {
-    ACCOUNT             = 0,
-    ISSUE               = 1,
-    SUPPORT             = 2,
-    DEFINE_TOKEN        = 3,
-    BURN_TOKEN          = 4,
-    UPDATE_CHANNEL      = 6,
-    CREATE_DAPP         = 7,
-    CREATE_SAPP         = 8,
-    PAYMENT             = 9,
-    MILESTONE           = 10,
-    EXECUTE             = 12,
-    XBRANCH_TRANSFER    = 13,
-}
-export const API_PASSWORD: string = 'change_me'; //Set to empty string ('') to disable endpoints that require a private key (i.e: sending a payment)
-export const DEFAULT_TOKEN_NONCE: 0x00 = 0x00 as const; //hex
-export const MAX_TOKEN_ISSUER_COUNT: 32 = 32;
-export const MAX_PARENTS_PER_UNIT: 64 = 64;
-export const GENESIS_ACCOUNT_PRIVKEY: string = "7973e9c8956e5f46ae21c4bdc2cfe8542ac9bb79e878c61e7ec98be06f481457";
-export const GENESIS_ACCOUNT_PUBKEY: string = "0351ec413291556b2bde6dcb1c27541a871b2a06ef4f3d42aa22b01361864dea6d";
-export const GENESIS_ACCOUNT_ADDRESS: string = "1a7373c9ee06d46ef81b4a5a0d708c6d9da94b44092f0638e18ac8a464d722e5";
-export const GENESIS_BALANCE: 500_000_000_000n = 500_000_000_000n;
-export const GENESIS_SUPPORT: 50_000_000_000n = 50_000_000_000n;
-export const PRIVATE_KEY: string = 'bc280963a64398e6703b9ce4c2d02689cdbde94ccc0da7a19dee5360b3517d9b' as const;
+export * from './ipfs.js';
+export * from './network.js';
+export * from './protocol.js';
+
 export const GENESIS_UNIT_HASH: string = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' as const;
-export const BASE_TOKEN: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" as const; //base64url zero
-export const BALANCE_WIDTH_BITS: 256 = 256; //32 bytes 256 is the min to be able to fit an address in a single word
-export const BALANCE_WIDTH_BYTES: 32 = (BALANCE_WIDTH_BITS/8) as 32; //32 bytes
-export const MAX_SMART_CONTRACT_LENGTH_BYTES: 4294967296 = 4294967296; //2**32
-export const MAX_CAP: 115792089237316195423570985008687907853269984665640564039457584007913129639936n = 2n**BigInt(BALANCE_WIDTH_BITS) as 115792089237316195423570985008687907853269984665640564039457584007913129639936n;
-export const MAX_INTEGER: 115792089237316195423570985008687907853269984665640564039457584007913129639935n = MAX_CAP-1n as 115792089237316195423570985008687907853269984665640564039457584007913129639935n;
-export const API_PROTOCOL: 'http' | 'https' = "http";
-export const API_HOST: 'localhost' = 'localhost';
-export const API_PORT: 4009 = 4009;
-export const API_URL: string = `${API_PROTOCOL}://${API_HOST}:${API_PORT}/api`;
 export const BINARY_ZERO_STRING: '\x00' = '\x00' as const;
-export const COMMUNITY_ADDRESS: string = '1'.repeat(64);
-export const MAX_CHANNEL_KEY_LENGTH_BYTES: 4096 = 4096;
-export const MAX_CHANNEL_VALUE_LENGTH: 32_688 = 32_688;
-export const MAX_VM_OPS_PER_CALL: 100_000_000 = 100_000_000;
-export const MAX_VM_GAS_PER_CALL: 800_000_000 = 800_000_000;
-export const STABILIZER_COUNT: 3 = 3;
 export const SIGNATURE_BYTE_LENGTH: 64 = 64;
 export const ADDRESS_BYTE_LENGTH: 32 = 32;
 export const PUBKEY_BYTE_LENGTH: 33 = 33;

@@ -2,7 +2,8 @@ import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
-import {DEFAULT_TOKEN_NONCE, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {DEFAULT_TOKEN_NONCE, GENESIS_ACCOUNT_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
 import Pack from "#classes/Pack";
 import {buffer2string} from "#lib/serde";
@@ -25,7 +26,7 @@ describe('[Transitions] Issue asset', async function (){
         assert.isString(ok, "The pack hash was returned");
 
 
-        const token_hash: string = buffer2string(createHash('sha256').update('token_', 'utf8').update(pack.r_hash, 'base64url').update('_', 'utf8').update(new Uint8Array([DEFAULT_TOKEN_NONCE])).digest(), 'base64url');
+        const token_hash: string = buffer2string(createHash('sha256').update('token_', 'utf8').update(<string>pack.r_hash, 'base64url').update('_', 'utf8').update(new Uint8Array([DEFAULT_TOKEN_NONCE])).digest(), 'base64url');
         const issue_pack: Pack = await new Pack().issue(GENESIS_ACCOUNT_ADDRESS, token_hash, 50n).seal(GENESIS_ACCOUNT_PRIVKEY);
         const bin3 = issue_pack.binary();
         ({ok, err} = await handle_incoming_pack(bin3));
@@ -34,8 +35,9 @@ describe('[Transitions] Issue asset', async function (){
         const {ok: token} = await db.get_token(token_hash);
         const new_balance = await db.get_balance(GENESIS_ACCOUNT_ADDRESS, token_hash);
         assert.strictEqual(new_balance, 50n, "Balance was correctly increased");
-        assert.strictEqual(token.supply, 50n, "Token supply was correctly adjusted");
+        assert.strictEqual(token!.supply, 50n, "Token supply was correctly adjusted");
     });
+    //TODO have a look
     //it('should not allow issuing the asset to a malformed address', async function () {
     //    const definition_pack: RawPack = {
     //        author: net.stabilizers[0].address,

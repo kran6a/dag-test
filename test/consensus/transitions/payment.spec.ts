@@ -2,7 +2,8 @@ import {describe, beforeEach, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
-import {BASE_TOKEN, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {BASE_TOKEN, GENESIS_ACCOUNT_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {string2buffer} from "#lib/serde";
 import {randomBytes} from "crypto";
 import Pack from "#classes/Pack";
@@ -21,9 +22,9 @@ describe('[Transitions] Payment', async function (){
         const {ok, err}: Option<string> = await handle_incoming_pack(pack.binary());
         assert.isUndefined(err, "No error was produced");
         assert.strictEqual(await db.get_balance(receiver, token), 0n);
-        assert.strictEqual(await db.get_balance(pack.r_author, BASE_TOKEN), initial_balance - await pack.get_commissions());
+        assert.strictEqual(await db.get_balance(<string>pack.r_author, BASE_TOKEN), initial_balance - await pack.get_commissions());
         assert.isString(ok);
-        assert.lengthOf(string2buffer(ok, 'base64url'), 32);
+        assert.lengthOf(string2buffer(<string>ok, 'base64url'), 32);
     });
     //TODO rework these tests
     //it('should accept a normal payment', async function () {

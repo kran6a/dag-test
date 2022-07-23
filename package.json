@@ -13,6 +13,7 @@
     "#routes/*": "./routes/*.js",
     "#classes/*": "./src/classes/*.js",
     "#constants": "./src/constants/index.js",
+    "#secrets": "./src/constants/secrets.js",
     "#db": "./src/db/index.js",
     "#vm": "./src/lib/vm/index.js",
     "#routines": "./src/lib/vm/routines.js"

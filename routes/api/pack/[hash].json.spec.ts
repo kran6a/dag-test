@@ -1,19 +1,22 @@
 import {describe, beforeEach, it} from 'mocha';
 import {assert} from 'chai';
-import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY, GENESIS_UNIT_HASH} from "#constants";
+import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_ADDRESS, GENESIS_UNIT_HASH} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from '#db';
 import handle_incoming_pack from "#lib/handle_incoming_pack";
 import Pack from "#classes/Pack";
 import {get} from "./[hash].json.js";
 import {randomBytes} from "crypto";
+import {is_ok} from "#lib/validation";
 
 describe('[API] [hash].json.ts', ()=>{
     let hash: string;
     beforeEach(async function(){
         await db.initialize();
         const pack: Pack = await new Pack().pay(COMMUNITY_ADDRESS, BASE_TOKEN, 100n).seal(GENESIS_ACCOUNT_PRIVKEY);
-        await handle_incoming_pack(pack.binary());
-        hash = pack.r_hash;
+        const opt: Option<string> = await handle_incoming_pack(pack.binary());
+        assert.isTrue(is_ok(opt), 'A pack was rejected');
+        hash = <string>pack.r_hash;
     });
     it('should match the generated pack', async function () {
         const response = await get({params: {hash}});

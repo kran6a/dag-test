@@ -1,4 +1,4 @@
-import {TRANSITION_TYPES} from "#constants";
+import {MAX_CHANNEL_VALUE_LENGTH, TRANSITION_TYPES} from "#constants";
 import {buffer2string, dop2int, int2dop, int2trop, string2buffer, trop2int} from "#lib/serde";
 import {db} from "#db";
 import type Pack from "#classes/Pack";
@@ -33,17 +33,19 @@ export default class Channel {
     static from_binary(bin: Uint8Array): [Channel, number] {
         const ret: Channel = new Channel({});
         if (bin[0] !== TRANSITION_TYPES.UPDATE_CHANNEL)
-            throw new Error("Bad binary payload");
+            throw new Error("Bad binary payload", {cause: new Error('Attempted to instantiate a Channel transition with an invalid transition byte')});
         const entry_count: number = bin[1]+1;
         let offset: number = 2;
         for (let i=0;i<entry_count;i++){
             const key_length: number = dop2int(bin.slice(offset, offset+=2))+1;
             if (bin.length < offset+key_length) //Key length is greater than the remaining payload
-                throw new Error("Bad binary payload");
+                throw new Error("Bad binary payload", {cause: new Error('Key length is greater than the remaining amount of bytes to read')});
             const key: string = buffer2string(bin.slice(offset, offset+=key_length), 'utf8');
             const value_length: number = trop2int(bin.slice(offset, offset+=3))+1;
+            if (value_length > MAX_CHANNEL_VALUE_LENGTH)
+                throw new Error("Bad binary payload", {cause: new Error('Value length is grater than MAX_CHANNEL_VALUE_LENGTH')});
             if (bin.length < offset+value_length) //Value length is greater than the remaining payload
-                throw new Error("Bad binary payload");
+                throw new Error("Bad binary payload", {cause: new Error('Value length is grater than the remaining amount of bytes to read')});
             const value: string = buffer2string(bin.slice(offset, offset+=value_length), 'utf8');
             ret.add(key, value);
         }
@@ -54,6 +56,6 @@ export default class Channel {
         return createHash('sha256').update('channel_', 'utf8').update(address, 'hex').update(key, 'utf8').digest('binary');
     }
     apply(pack: Pack): void{
-        Object.entries(this.payload).forEach(([key, value])=>db.set_channel(pack.r_author, key, value));
+        Object.entries(this.payload).forEach(([key, value])=>db.set_channel(<string>pack.r_author, key, value));
     }
 }

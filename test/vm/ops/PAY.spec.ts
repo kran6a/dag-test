@@ -2,7 +2,8 @@ import {describe, it, beforeEach} from 'mocha';
 import {assert} from 'chai';
 import {EXCEPTIONS, OPS, Vm} from '#vm';
 import {bigint2word} from "#lib/serde";
-import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {BASE_TOKEN, COMMUNITY_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from "#db";
 import Pack from "#classes/Pack";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
@@ -27,7 +28,7 @@ describe('[VM] PAY', ()=>{
         assert.strictEqual(vm.pc, code.length, 'VM code tape was consumed');
 
         assert.isDefined(vm.output.r_payment, 'VM output contains a payment');
-        assert.strictEqual(vm.output.r_payment.to_address(COMMUNITY_ADDRESS).get(BASE_TOKEN), 42n, 'The community address received 42n');
+        assert.strictEqual(vm.output!.r_payment!.to_address(COMMUNITY_ADDRESS).get(BASE_TOKEN), 42n, 'The community address received 42n');
     });
     it('should not allow paying more than the current smart contract balance', async function () {
         const code: Uint8Array = new Uint8Array([OPS.LABEL, OPS.PUSH3, ...pay({amount: 42n, to: COMMUNITY_ADDRESS, token: BASE_TOKEN}), OPS.PAY]);

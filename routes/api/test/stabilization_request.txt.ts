@@ -1,5 +1,6 @@
 import Pack from "#classes/Pack";
-import {COMMUNITY_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {COMMUNITY_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 
 let last_stabilization: number = 0;
 

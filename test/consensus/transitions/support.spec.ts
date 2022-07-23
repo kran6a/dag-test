@@ -1,7 +1,8 @@
 import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY, GENESIS_ACCOUNT_PUBKEY, GENESIS_BALANCE} from "#constants";
+import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY, GENESIS_BALANCE} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash, randomBytes} from "crypto";
 import Pack from "#classes/Pack";
 import secp256k1 from "secp256k1";
@@ -60,7 +61,7 @@ describe('[Transitions] Support stabilizer', async function (){
             assert.isString(ok, "The pack hash was returned");
         }
         {
-            const {ok, err}: Option<Pack> = await db.get_pack(pack.r_hash);
+            const {ok, err}: Option<Pack> = await db.get_pack(<string>pack.r_hash);
             assert.isUndefined(err, "The pack was stored in the DB");
             assert.isTrue(ok?.stable, "The pack is stable");
         }

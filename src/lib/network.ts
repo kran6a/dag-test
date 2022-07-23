@@ -6,11 +6,12 @@ import {create} from 'ipfs-http-client';
 import {log} from "#lib/logger";
 import {Agent} from "http";
 import {is_ok} from "#lib/validation";
+import {IPFS_HTTP_API_URL} from "#constants";
 
 const NETWORK_ID: string = 'b519d1c6-937d-453d-81db-0bc3627e2287';
 const PEER_TOPIC: string = 'f83ff43b-6167-40f1-ac9b-d0f946419d8e';
 
-const ipfs = await create({url: 'http://127.0.0.1:5001/api/v0', agent: new Agent({ keepAlive: true, maxSockets: Infinity })});
+const ipfs = await create({url: IPFS_HTTP_API_URL, agent: new Agent({ keepAlive: true, maxSockets: Infinity })});
 console.info("IPFS started");
 await ipfs.pubsub.subscribe(`${NETWORK_ID}-pack`, async (msg)=>{
     log("Network", 'INFO', `We received a pack from the network with hash ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);

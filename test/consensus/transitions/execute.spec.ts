@@ -1,7 +1,8 @@
 import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import {BASE_TOKEN, BINARY_ZERO, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY, GENESIS_ACCOUNT_PUBKEY} from "#constants";
+import {BASE_TOKEN, BINARY_ZERO, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {OPS} from "#lib/vm/ops";
 import {pay} from "#lib/vm/routines";
 import handle_incoming_pack from "#lib/handle_incoming_pack";

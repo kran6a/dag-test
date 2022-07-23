@@ -2,7 +2,7 @@ import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
-import {GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
 import {bigint2word} from "#lib/serde";
 import {OPS} from "#lib/vm/ops";

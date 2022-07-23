@@ -2,10 +2,12 @@ import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
 import handle_incoming_pack from "#lib/handle_incoming_pack";
-import {DEFAULT_TOKEN_NONCE, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PRIVKEY} from "#constants";
+import {DEFAULT_TOKEN_NONCE, GENESIS_ACCOUNT_ADDRESS} from "#constants";
+import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
 import {buffer2string} from "#lib/serde";
 import Pack from "#classes/Pack";
+import {is_ok} from "#lib/validation";
 
 describe('[Transitions] Burn token', async function (){
     beforeEach(async function(){
@@ -25,7 +27,7 @@ describe('[Transitions] Burn token', async function (){
         assert.isString(ok, "The pack hash was returned");
 
 
-        const token_hash: string = buffer2string(createHash('sha256').update('token_', 'utf8').update(pack.r_hash, 'base64url').update('_', 'utf8').update(new Uint8Array([DEFAULT_TOKEN_NONCE])).digest(), 'base64url');
+        const token_hash: string = buffer2string(createHash('sha256').update('token_', 'utf8').update(<string>pack.r_hash, 'base64url').update('_', 'utf8').update(new Uint8Array([DEFAULT_TOKEN_NONCE])).digest(), 'base64url');
         const issuing_pack: Pack = await new Pack().issue(GENESIS_ACCOUNT_ADDRESS, token_hash, 100n).seal(GENESIS_ACCOUNT_PRIVKEY);
         const bin2 = issuing_pack.binary();
         assert.deepStrictEqual(await db.get_leaves(), issuing_pack.r_parents, "");
@@ -41,11 +43,13 @@ describe('[Transitions] Burn token', async function (){
         ({ok, err} = await handle_incoming_pack(bin3));
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
-        const {ok: token} = await db.get_token(token_hash);
+        const opt: Option<{ hash: string; cap: bigint; burnable: boolean; issuers: string[]; supply: bigint }> = await db.get_token(token_hash);
+        assert.isTrue(is_ok(opt), 'The token could not be retrieved from the DB');
         const new_balance = await db.get_balance(GENESIS_ACCOUNT_ADDRESS, token_hash);
         assert.strictEqual(new_balance, 50n, "Balance was correctly reduced");
-        assert.strictEqual(token.supply, 50n, "Token supply was correctly adjusted");
+        assert.strictEqual(opt!.ok!.supply, 50n, "Token supply was correctly adjusted");
     });
+    //TODO have a look at this
     //it('should not allow burning unburnable tokens', async function () {
     //    const definition_pack: RawPack = {
     //        author: net.stabilizers[0].address,
