@@ -1,5 +1,5 @@
 import {ADDRESS_BYTE_LENGTH, BALANCE_WIDTH_BYTES, GENESIS_UNIT_HASH, MAX_CAP, TRANSITION_TYPES} from "#constants";
-import {token2bin, binary2bigint, buffer2string, string2buffer} from "#lib/serde";
+import {token2bin, binary2bigint, buffer2string} from "#lib/serde";
 import {createHash} from "crypto";
 import {db} from "#db";
 import type Pack from "#classes/Pack";
@@ -58,20 +58,20 @@ export default class Token {
         ret.binary = ()=>bin;
         return [ret, offset];
     }
-    static async compute_hash(pack: Pack, nonce: number): Promise<string>{
-        return buffer2string(new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array([
-            ...string2buffer('token_', 'utf8'),
-            ...string2buffer(pack.r_hash, 'base64url'),
-            ...string2buffer('_', 'utf8'),
-            nonce
-        ]))), 'base64url');
+    static async compute_hash(pack_hash: string, nonce: number): Promise<string>{
+        return createHash('sha256')
+            .update('token_', 'utf8')
+            .update(pack_hash, 'base64url')
+            .update('_', 'utf8')
+            .update(new Uint8Array([nonce]))
+            .digest('base64url');
     }
     apply(pack: Pack): void{
         this.payload.forEach((token)=>{
             const hash: Uint8Array = pack.r_hash === GENESIS_UNIT_HASH
                 ? createHash('sha256').update('token_', 'utf8').update(GENESIS_UNIT_HASH, 'base64url').digest()
                 : createHash('sha256').update('token_', 'utf8')
-                .update(pack.r_hash, 'base64url')
+                .update(<string>pack.r_hash, 'base64url')
                 .update('_', 'utf8')
                 .update(new Uint8Array([token.nonce]))
                 .digest();

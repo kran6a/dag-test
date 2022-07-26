@@ -311,7 +311,7 @@ const TRANSITION_MAPPINGS = { //ORDER matters
     [TRANSITION_TYPES.UPDATE_CHANNEL]:  {class: ()=>Channel,    field: 'r_channel'},
     [TRANSITION_TYPES.PAYMENT]:         {class: ()=>Payment,    field: 'r_payment'},
     [TRANSITION_TYPES.EXECUTE]:         {class: ()=>Execution,  field: 'r_execution'}
-}
+} as const;
 
 export default class Pack {
     public r_account: Account | undefined;
@@ -364,12 +364,13 @@ export default class Pack {
         if (offset === bin.length)
             throw new Error("Bad binary payload"); //The pack does not contain any transition
         while (offset < bin.length){ //Parse transitions
-            const pack_type: TRANSITION_TYPES = bin[offset]; //offset is not incremented here since it will be incremented at the end
+            const pack_type: keyof typeof TRANSITION_MAPPINGS = bin[offset]; //offset is not incremented here since it will be incremented at the end
             if (TRANSITION_MAPPINGS[pack_type] === undefined)
                 throw new Error("Bad binary payload");
-            const [transition, bytes_read] = TRANSITION_MAPPINGS[pack_type].class().from_binary(bin.slice(offset));
-            if (this[TRANSITION_MAPPINGS[pack_type].field] !== undefined) //Duplicated transition
+            const [transition, bytes_read]: [Transition, number] = TRANSITION_MAPPINGS[pack_type].class().from_binary(bin.slice(offset));
+            if ((<Pack><unknown>this)[TRANSITION_MAPPINGS[pack_type].field] !== undefined) //Duplicated transition
                 throw new Error("Bad binary payload");
+            // @ts-ignore
             ret[TRANSITION_MAPPINGS[pack_type].field] = transition;
             ret.body.push(transition);
             offset+=bytes_read;
@@ -383,7 +384,7 @@ export default class Pack {
     }
     submit(): Promise<Option<string>> | Option<string>{
         try {
-            return handle_incoming_pack(this.binary(false));
+            return handle_incoming_pack(this.binary(false), {relay: true});
         } catch (e) {
             return {err: (<Error>e).message};
         }
@@ -408,7 +409,7 @@ export default class Pack {
                 .concat(this.r_parents.length-1)
                 .concat(Array.from(string2buffer(this.r_milestone || '', 'base64url')))
                 .concat(this.r_parents.reduce((acc: number[], cur)=>acc.concat(Array.from(string2buffer(cur, 'base64url'))), []))
-                .concat(Object.values(TRANSITION_MAPPINGS).reduce((acc: number[], {field})=>this[field] === undefined ? acc : acc.concat(Array.from(this[field].binary())), []))
+                .concat(Object.values(TRANSITION_MAPPINGS).reduce((acc: number[], {field})=>this[field] === undefined ? acc : acc.concat(Array.from((<Transition>this[field]).binary())), []))
         );
         this.r_size = ret.length;
         return ret;
@@ -482,7 +483,7 @@ export default class Pack {
             this.r_dapp.add(new Uint8Array(code));
         return this;
     }
-    token(token_definition: {cap: bigint, issuers: string[], burnable: boolean, nonce?: number}): Pack{
+    token(token_definition: {cap?: bigint, issuers: string[], burnable: boolean, nonce?: number}): Pack{
         const taken_nonces: Set<number> = new Set(this?.r_token?.payload ? this.r_token.payload.map(x=>x.nonce) : []);
         const token_nonce: number | undefined = token_definition.nonce === undefined ? possible_nonces.find(x=>!taken_nonces.has(x)) : token_definition.nonce;
         token_definition.nonce = token_nonce || DEFAULT_TOKEN_NONCE;

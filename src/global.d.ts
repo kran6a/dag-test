@@ -1,6 +1,16 @@
 import {TRANSITION_TYPES} from "#constants";
 import type {Readable} from "stream";
 import type {Request} from 'express'
+import type Account from "#classes/Account";
+import type Channel from "#classes/Channel";
+import type Burn from "#classes/Burn";
+import type Dapp from "#classes/DAPP";
+import type Milestone from "#classes/Milestone";
+import type Issue from "#classes/Issue";
+import type Payment from "#classes/Payment";
+import type Execution from "#classes/Execution";
+import type Support from "#classes/Support";
+import type Token from "#classes/Token";
 
 
 
@@ -30,11 +40,6 @@ declare global {
 		get: (key: string)=>Promise<string>
 	}
 	type Option<OK, ERR = string> = {err: ERR, ok?: undefined} | {ok: OK, err?: undefined}
-	type Token = {
-		cap?: string,
-		burnable?: boolean,
-		issuers: string[]
-	}
 	type ParsedToken = {
 		hash?: string,
 		cap: bigint,
@@ -42,18 +47,7 @@ declare global {
 		issuers: string[],
 		supply?: bigint
 	}
-	type Transition = Transitions.Token_Definition
-		| Transitions.Token_Issue
-		| Transitions.Token_Burn
-		| Transitions.Dapp
-		| Transitions.Sapp
-		| Transitions.Payment
-		| Transitions.Cross_Branch_Transfer
-		| Transitions.Stabilizer_Support
-		| Transitions.Update_Data_Channel
-		| Transitions.Account
-		| Transitions.Milestone
-		| Transitions.Execute
+	type Transition =  Account | Burn | Channel | Dapp | Token | Execution | Issue | Milestone | Payment | Support;
 	namespace Transitions {
 		type Stabilizer_Support = {
 			type: TRANSITION_TYPES.SUPPORT,
@@ -113,14 +107,4 @@ declare global {
 			calls: Array<{address: string, params: string[], gas_limit: number}>
 		}
 	}
-	type Pack = {
-		hash: string,
-		sig: string,
-		author: string,
-		parents: Array<string>,
-		body?: Array<Transition>,
-		index?: string,
-		milestone: string
-	}
-	type RawPack = Omit<Pack, 'hash' | 'milestone' | 'index' | 'sig'>
 }
