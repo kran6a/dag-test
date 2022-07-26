@@ -1,9 +1,9 @@
-import {get} from '$routes/api/catchup/[leaf].json';
+import {get} from '#routes/api/catchup/[leaf].json';
 import {describe} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
 import {createHash} from "crypto";
-import handle_incoming_pack from "../../../src/lib/handle_incoming_pack";
+import handle_incoming_pack from "#lib/handle_incoming_pack";
 
 const hash = (str: string): string=>createHash('sha256').update(str).digest('base64url');
 //TODO implement

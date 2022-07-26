@@ -1,7 +1,6 @@
 import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {DEFAULT_TOKEN_NONCE, GENESIS_ACCOUNT_ADDRESS} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
@@ -21,17 +20,15 @@ describe('[Transitions] Burn token', async function (){
             nonce: DEFAULT_TOKEN_NONCE
         };
         const pack: Pack = await new Pack().token(token_definition).seal(GENESIS_ACCOUNT_PRIVKEY);
-        const bin1: Uint8Array = pack.binary();
-        let {ok, err}: Option<string> = await handle_incoming_pack(bin1);
+        let {ok, err}: Option<string> = await pack.submit();
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
 
 
         const token_hash: string = buffer2string(createHash('sha256').update('token_', 'utf8').update(<string>pack.r_hash, 'base64url').update('_', 'utf8').update(new Uint8Array([DEFAULT_TOKEN_NONCE])).digest(), 'base64url');
         const issuing_pack: Pack = await new Pack().issue(GENESIS_ACCOUNT_ADDRESS, token_hash, 100n).seal(GENESIS_ACCOUNT_PRIVKEY);
-        const bin2 = issuing_pack.binary();
         assert.deepStrictEqual(await db.get_leaves(), issuing_pack.r_parents, "");
-        ({ok, err} = await handle_incoming_pack(bin2));
+        ({ok, err} = await issuing_pack.submit());
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
         const balance: bigint = await db.get_balance(GENESIS_ACCOUNT_ADDRESS, token_hash);
@@ -39,8 +36,7 @@ describe('[Transitions] Burn token', async function (){
 
 
         const burn_pack: Pack = await new Pack().burn(token_hash, 50n).seal(GENESIS_ACCOUNT_PRIVKEY);
-        const bin3 = burn_pack.binary();
-        ({ok, err} = await handle_incoming_pack(bin3));
+        ({ok, err} = await burn_pack.submit());
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
         const opt: Option<{ hash: string; cap: bigint; burnable: boolean; issuers: string[]; supply: bigint }> = await db.get_token(token_hash);

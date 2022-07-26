@@ -3,7 +3,6 @@ import {assert} from 'chai';
 import {BASE_TOKEN, COMMUNITY_ADDRESS, GENESIS_ACCOUNT_ADDRESS, GENESIS_UNIT_HASH} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from '#db';
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import Pack from "#classes/Pack";
 import {get} from "./[hash].json.js";
 import {randomBytes} from "crypto";
@@ -14,7 +13,7 @@ describe('[API] [hash].json.ts', ()=>{
     beforeEach(async function(){
         await db.initialize();
         const pack: Pack = await new Pack().pay(COMMUNITY_ADDRESS, BASE_TOKEN, 100n).seal(GENESIS_ACCOUNT_PRIVKEY);
-        const opt: Option<string> = await handle_incoming_pack(pack.binary());
+        const opt: Option<string> = await pack.submit();
         assert.isTrue(is_ok(opt), 'A pack was rejected');
         hash = <string>pack.r_hash;
     });

@@ -6,7 +6,6 @@ import {BALANCE_WIDTH_BYTES} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from '#db';
 import Pack from "#classes/Pack";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import Dapp from "#classes/DAPP";
 import {is_ok} from "#lib/validation";
 
@@ -15,7 +14,7 @@ describe('[VM] CALL', ()=>{
     beforeEach(async function(){
         await db.initialize();
         const pack = await new Pack().dapp(sum_code).seal(GENESIS_ACCOUNT_PRIVKEY);
-        await handle_incoming_pack(pack.binary());
+        await pack.submit();
     })
     it('should CALL foreign code', async function () {
         const address: string = Dapp.compute_address(sum_code);

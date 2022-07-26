@@ -6,7 +6,6 @@ import {GENESIS_ACCOUNT_ADDRESS} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from '#db';
 import Pack from '#classes/Pack';
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import Channel from "#classes/Channel";
 import {read_channel_by_owner} from "#routines";
 
@@ -15,7 +14,7 @@ describe('[VM] R_CHANNEL', ()=>{
     beforeEach(async function (){
         await db.initialize();
         const pack: Pack = await new Pack().channel('awesome_key', '42').seal(GENESIS_ACCOUNT_PRIVKEY);
-        await handle_incoming_pack(pack.binary());
+        await pack.submit();
     });
     it('should push the value into the stack', async function () {
         const code: Uint8Array = new Uint8Array([OPS.LABEL, ...read_channel_by_owner(GENESIS_ACCOUNT_ADDRESS, 'awesome_key')]);

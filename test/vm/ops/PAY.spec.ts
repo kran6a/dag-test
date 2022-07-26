@@ -6,7 +6,6 @@ import {BASE_TOKEN, COMMUNITY_ADDRESS} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {db} from "#db";
 import Pack from "#classes/Pack";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {pay} from "#routines";
 import Dapp from "#classes/DAPP";
 import {is_ok} from "#lib/validation";
@@ -19,7 +18,7 @@ describe('[VM] PAY', ()=>{
         const code: Uint8Array = new Uint8Array([OPS.LABEL, OPS.PUSH3, ...bigint2word(BigInt('0x'+COMMUNITY_ADDRESS)), ...bigint2word(0n), ...bigint2word(42n), OPS.PAY]);
         const vm: Vm = new Vm(code, COMMUNITY_ADDRESS, 1300, []);
         const pack: Pack = await new Pack().pay(Dapp.compute_address(code), BASE_TOKEN, 100000n).seal(GENESIS_ACCOUNT_PRIVKEY);
-        assert.isString((await handle_incoming_pack(pack.binary())).ok);
+        assert.isString((await pack.submit()).ok);
 
         const {ok, err}: Option<Uint8Array, EXCEPTIONS> = await vm.execute();
         assert.isUndefined(err, 'No error was produced');

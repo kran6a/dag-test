@@ -5,7 +5,6 @@ import {BASE_TOKEN, BINARY_ZERO, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {OPS} from "#lib/vm/ops";
 import {pay} from "#lib/vm/routines";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {bigint2word, int2qop} from "#lib/serde";
 import Pack from "#classes/Pack";
 import Dapp from "#classes/DAPP";
@@ -20,14 +19,13 @@ describe('[Transitions] Execute', async function (){
     beforeEach(async function(){
         await db.initialize({stabilizers: {[GENESIS_ACCOUNT_PUBKEY]: 100n}, balances: {[GENESIS_ACCOUNT_ADDRESS]: 1_000_000n}});
         const pack: Pack = await new Pack().dapp(code).seal(GENESIS_ACCOUNT_PRIVKEY);
-        const opt: Option<string> = await handle_incoming_pack(pack.binary());
+        const opt: Option<string> = await pack.submit();
         assert.isTrue(is_ok(opt), 'No error was thrown');
     });
     it('should charge fees to the sender even if the execution fails', async function () {
         const pack: Pack = await new Pack().execute(dapp_address, [bigint2word(100_000n)], 1300).seal(GENESIS_ACCOUNT_PRIVKEY);
         const initial_balance: bigint = await db.get_balance(GENESIS_ACCOUNT_ADDRESS, BASE_TOKEN);
-        const bin: Uint8Array = pack.binary();
-        const opt: Option<string> = await handle_incoming_pack(bin);
+        const opt: Option<string> = await pack.submit();
         assert.isTrue(is_ok(opt), "The pack got accepted");
         const commissions: bigint = await pack.get_commissions();
         assert.strictEqual(await db.get_balance(GENESIS_ACCOUNT_ADDRESS, BASE_TOKEN), initial_balance - 1300n - commissions, 'Commissions have been charged');

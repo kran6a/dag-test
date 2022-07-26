@@ -1,7 +1,6 @@
 import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db, get_state_hash} from "#db";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import Pack from "#classes/Pack";
 import secp256k1 from "secp256k1";
@@ -16,7 +15,7 @@ describe('[Transitions] Milestone', async function (){
         const sigs: string[] = [buffer2string(secp256k1.ecdsaSign(string2buffer(state_hash, 'hex'), string2buffer(GENESIS_ACCOUNT_PRIVKEY, 'hex')).signature, 'base64url')];
         const pack: Pack = await new Pack().milestone(sigs, state_hash).seal(GENESIS_ACCOUNT_PRIVKEY);
 
-        let {ok, err}: Option<string> = await handle_incoming_pack(pack.binary());
+        let {ok, err}: Option<string> = await pack.submit();
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
         assert.strictEqual(await db.get_milestone(), ok, 'milestone was updated');

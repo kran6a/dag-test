@@ -15,7 +15,7 @@ const ipfs = await create({url: IPFS_HTTP_API_URL, agent: new Agent({ keepAlive:
 console.info("IPFS started");
 await ipfs.pubsub.subscribe(`${NETWORK_ID}-pack`, async (msg)=>{
     log("Network", 'INFO', `We received a pack from the network with hash ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);
-    await handle_incoming_pack(msg.data, false);
+    await handle_incoming_pack(msg.data);
 });
 await ipfs.pubsub.subscribe(`${NETWORK_ID}-query`, async (msg)=>{
     log("Network", 'INFO', `We got queried for ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);

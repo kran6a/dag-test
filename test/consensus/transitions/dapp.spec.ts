@@ -1,7 +1,6 @@
 import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
 import {bigint2word} from "#lib/serde";
@@ -15,7 +14,7 @@ describe('[Transitions] Dapp', async function (){
     it('should work', async function () {
         const dapp_code = [OPS.LABEL, OPS.PUSH, ...bigint2word(5n), OPS.PUSH, ...bigint2word(4n), OPS.ADD];
         const pack = await new Pack().dapp(dapp_code).seal(GENESIS_ACCOUNT_PRIVKEY);
-        const {ok, err}: Option<string> = await handle_incoming_pack(pack.binary());
+        const {ok, err}: Option<string> = await pack.submit();
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
         const dapp_address: string = createHash('sha256').update('sca_', 'utf8').update(new Uint8Array(dapp_code)).digest('hex');

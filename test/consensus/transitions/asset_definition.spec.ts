@@ -1,11 +1,11 @@
 import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
-import {GENESIS_ACCOUNT_ADDRESS} from "#constants";
+import {DEFAULT_TOKEN_NONCE, GENESIS_ACCOUNT_ADDRESS, MAX_CAP} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {createHash} from "crypto";
 import Pack from "#classes/Pack";
+import Token from "#classes/Token";
 
 describe('[Transitions] Asset definition', async function (){
     beforeEach(async function(){
@@ -13,8 +13,7 @@ describe('[Transitions] Asset definition', async function (){
     });
     it('should work', async function () {
         const pack: Pack = await new Pack().token({cap: 200n, burnable: false, issuers: [GENESIS_ACCOUNT_ADDRESS], nonce: 42}).seal(GENESIS_ACCOUNT_PRIVKEY);
-        const bin: Uint8Array = pack.binary();
-        const {ok, err}: Option<string> = await handle_incoming_pack(bin);
+        const {ok, err}: Option<string> = await pack.submit();
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
         const token_hash: string = createHash('sha256').update('token_', 'utf8')
@@ -25,28 +24,17 @@ describe('[Transitions] Asset definition', async function (){
         const {ok: result_token} = await db.get_token(token_hash);
         assert.deepEqual(result_token, {cap: 200n, hash: token_hash, burnable: false, issuers: [GENESIS_ACCOUNT_ADDRESS], supply: 0n});
     });
+    it('should default cap to MAX_CAP and burnable to false when omitted', async function () {
+        const pack: Pack = new Pack().token({issuers: [GENESIS_ACCOUNT_ADDRESS], burnable: false, nonce: DEFAULT_TOKEN_NONCE})
+        const signed: Pack = await pack.seal(GENESIS_ACCOUNT_PRIVKEY);
+        const {ok, err}: Option<string> = await signed.submit();
+        assert.isUndefined(err, "No error was returned");
+        assert.isString(ok, "The pack hash was returned");
+        const token_hash: string = await Token.compute_hash(<string>ok, DEFAULT_TOKEN_NONCE);
+        const result_token: Option<ParsedToken> = await db.get_token(token_hash);
+        assert.deepEqual(result_token.ok, {cap: MAX_CAP, hash: token_hash, burnable: false, issuers: [GENESIS_ACCOUNT_ADDRESS], supply: 0n});
+    });
     //TODO check this
-    //it('should default cap to MAX_CAP and burnable to false when omitted', async function () {
-    //    const pack: RawPack = {
-    //        author: net.stabilizers[0].address,
-    //        body: [
-    //            <Transitions.Token_Definition>{
-    //                type: TRANSITION_TYPES.DEFINE_TOKEN,
-    //                tokens: [{
-    //                    issuers: [net.stabilizers[0].address],
-    //                    nonce: DEFAULT_TOKEN_NONCE
-    //                }]
-    //            }
-    //        ]
-    //    };
-    //    const signed: Pack = await sign_and_hash(pack, make_signer(net.stabilizers[0].privkey));
-    //    const {ok, err}: Option<string> = await handle_incoming_pack(signed);
-    //    assert.isUndefined(err, "No error was returned");
-    //    assert.isString(ok, "The pack hash was returned");
-    //    const token_hash: string = createHash('sha256').update('token_', 'utf8').update(signed.hash, 'base64url').update('_', 'utf8').update(pack.body[0].nonce || DEFAULT_TOKEN_NONCE, 'hex').digest('base64url');
-    //    const result_token: ParsedToken = await get_token(db, token_hash);
-    //    assert.deepEqual(result_token, {cap: MAX_CAP, hash: token_hash, burnable: false, issuers: [net.stabilizers[0].address], supply: 0n});
-    //});
     //it('should create two tokens', async function () {
     //    const pack: RawPack = {
     //        author: net.stabilizers[0].address,

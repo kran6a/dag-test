@@ -1,7 +1,6 @@
 import {beforeEach, describe, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {GENESIS_ACCOUNT_ADDRESS, MAX_CHANNEL_VALUE_LENGTH} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import Pack from "#classes/Pack";
@@ -17,7 +16,7 @@ describe('[Transitions] Channel', async function (){
         const value: string = "42";
         const pack: Pack = await new Pack().channel(key, value).seal(GENESIS_ACCOUNT_PRIVKEY);
 
-        const {ok, err}: Option<string> = await handle_incoming_pack(pack.binary());
+        const {ok, err}: Option<string> = await pack.submit();
         assert.isUndefined(err, "No error was returned");
         assert.isString(ok, "The pack hash was returned");
         const r_value: string = await db.get_channel(GENESIS_ACCOUNT_ADDRESS, "awesome_answer");

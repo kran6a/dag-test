@@ -5,14 +5,13 @@ import {get} from "./[name].bin.js";
 import {GENESIS_ACCOUNT_ADDRESS} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from '#secrets';
 import Pack from "#classes/Pack";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {buffer2string} from "#lib/serde";
 
 describe('[API] /account/[address]/channel/[name].bin.ts', ()=>{
     beforeEach(async function(){
         await db.initialize();
         const pack = await new Pack().channel('foo', 'bar').seal(GENESIS_ACCOUNT_PRIVKEY);
-        await handle_incoming_pack(pack.binary());
+        await pack.submit();
     });
     it('should return the correct balance', async function () {
         const response = await get({params: {address: GENESIS_ACCOUNT_ADDRESS, name: 'foo'}});

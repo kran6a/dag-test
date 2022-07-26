@@ -3,6 +3,7 @@ import createRouter from "./express-file-routing/index.js";
 import {resolve} from 'path';
 import {API_HOST, API_PORT, API_PROTOCOL} from "#constants";
 import cors from "./decorators/cors.js";
+import polyfills from "./src/lib/polyfills";
 Error.stackTraceLimit = Infinity;
 
 const app = express();

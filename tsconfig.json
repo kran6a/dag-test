@@ -17,7 +17,8 @@
 			"#secrets": 	["./src/constants/secrets.js"],
 			"#db":			["./src/db/index.js"],
 			"#vm":			["./src/lib/vm/index.js"],
-			"#routines": 	["./src/lib/vm/routines.js"]
+			"#routines": 	["./src/lib/vm/routines.js"],
+			"#polyfills":   ["./src/lib/polyfills/index.js"]
 		}
 	},
 	"ts-node": {

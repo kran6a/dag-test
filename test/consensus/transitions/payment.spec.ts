@@ -1,7 +1,6 @@
 import {describe, beforeEach, it} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import handle_incoming_pack from "#lib/handle_incoming_pack";
 import {BASE_TOKEN, GENESIS_ACCOUNT_ADDRESS} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import {string2buffer} from "#lib/serde";
@@ -19,7 +18,7 @@ describe('[Transitions] Payment', async function (){
         const initial_balance: bigint = await db.get_balance(GENESIS_ACCOUNT_ADDRESS, BASE_TOKEN);
         const pack: Pack = await new Pack().pay(receiver, token, amount).seal(GENESIS_ACCOUNT_PRIVKEY);
 
-        const {ok, err}: Option<string> = await handle_incoming_pack(pack.binary());
+        const {ok, err}: Option<string> = await pack.submit();
         assert.isUndefined(err, "No error was produced");
         assert.strictEqual(await db.get_balance(receiver, token), 0n);
         assert.strictEqual(await db.get_balance(<string>pack.r_author, BASE_TOKEN), initial_balance - await pack.get_commissions());
