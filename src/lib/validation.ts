@@ -4,17 +4,13 @@ import memoize from "#lib/functional/memoize";
 import type Pack from "#classes/Pack";
 import {string2buffer} from "#lib/serde";
 import {createHash} from "crypto";
-import Milestone from "../classes/Milestone";
-import {Fn} from "ipfs-http-client/dist/src/lib/configure";
+import Milestone from "#classes/Milestone";
+
 type Ran<T extends number> = number extends T ? number :_Range<T, []>;
 type _Range<T extends number, R extends unknown[]> = R['length'] extends T ? R[number] : _Range<T, [R['length'], ...R]>;
 type Byte = Ran<255>
 
 const HEX_REGEX: RegExp = /[\dA-Fa-f]/;
-function assert(condition: boolean | null | undefined, message: string){
-    if (condition === null || condition === undefined || condition === false)
-        throw new Error(message);
-}
 export const is_integer = (n: any): n is number=>typeof n === 'number' && Number.isInteger(n);
 export const is_string = (str: any): str is string=>typeof str === "string";
 export const is_bigint = (n: any): n is bigint=>typeof n === "string";
@@ -101,7 +97,7 @@ const some_parent = async <T>(pack: Pack, predicate: (pack: Pack)=>T): Promise<T
     if (result)
         return result;
     const parents: Option<Pack>[] = await Promise.all((pack?.r_parents || []).map(x=>db.get_pack(x)));
-    return (await Promise.all(parents.map((x: Option<Pack>)=>some_parent(x.ok, predicate)))).find((x: T)=>x !== undefined);
+    return <T>(await Promise.all(parents.map((x: Option<Pack>)=>some_parent(<Pack>x.ok, predicate)))).find((x: T)=>x !== undefined);
 }
 /**
  * @description Checks if a pack is sequential. Being sequential means the author of the pack did not issue another pack on an unrelated DAG branch.
@@ -109,9 +105,9 @@ const some_parent = async <T>(pack: Pack, predicate: (pack: Pack)=>T): Promise<T
  */
 //TODO topological sort
 export const is_sequential = memoize(async (pack: Pack): Promise<boolean>=>{
-    const milestone: string = pack.r_milestone;
+    const milestone: string = <string>pack.r_milestone;
     const leaves: string[] = (await db.get_leaves()).filter(x=>x !== pack.r_hash && x !== milestone && !pack.r_parents.includes(x)); //Remove current pack and their leaves since any path from the leaves is already sequential
-    const get_sequential_hash = (parent: Pack): string=>{
+    const get_sequential_hash = (parent: Pack): string | undefined=>{
         if (parent.r_hash === pack.r_hash && pack.r_hash !== milestone)
             return;
         if (parent.r_author === pack.r_author)  //We reached a previous pack by the same author
@@ -119,9 +115,9 @@ export const is_sequential = memoize(async (pack: Pack): Promise<boolean>=>{
         if (parent.r_hash === milestone)      //We reached the milestone
             return milestone;
     };
-    const expected: string = leaves.length === 0 ? milestone : await some_parent(pack, get_sequential_hash); //Expected parent according to the pack author
-    const actual: string[] = leaves.length === 0 ? [milestone] : await Promise.all(leaves.map(async x=>some_parent(await db.get_pack(x).then(x=>x.ok), get_sequential_hash))); //Parents we got following paths from leaves
+    const expected: string | undefined = leaves.length === 0 ? milestone : await some_parent(pack, get_sequential_hash); //Expected parent according to the pack author
+    const actual: Awaited<string | undefined>[] = leaves.length === 0 ? [milestone] : await Promise.all(leaves.map(async x=>some_parent(<Pack>await db.get_pack(x).then(x=>x.ok), get_sequential_hash))); //Parents we got following paths from leaves
     //TODO may need to re-enable logging here
     //console.log({expected}, {actual}, pack.hash, {leaves});
     return actual.every(x=>x === expected); //Every path converges
-}, {maxItems: 128, hasher: (pack: Pack): string=>pack.r_hash});
+}, {maxItems: 128, hasher: (pack: Pack): string=><string>pack.r_hash});
