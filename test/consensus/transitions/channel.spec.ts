@@ -6,7 +6,7 @@ import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";
 import Pack from "#classes/Pack";
 import {randomBytes} from "crypto";
 import {silence} from "#lib/logger";
-silence('DB', 'INFO');
+silence('DB');
 describe('[Transitions] Channel', async function (){
     beforeEach(async function(){
         await db.initialize();

@@ -1,5 +1,5 @@
 import express from "express";
-import createRouter from "./express-file-routing/index.js";
+import createRouter from "express-file-router";
 import {resolve} from 'path';
 import {API_HOST, API_PORT, API_PROTOCOL} from "#constants";
 import cors from "./decorators/cors.js";

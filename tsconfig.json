@@ -17,6 +17,7 @@
 			"#secrets": 	["./src/constants/secrets.js"],
 			"#db":			["./src/db/index.js"],
 			"#vm":			["./src/lib/vm/index.js"],
+			"#network":		["./src/lib/network/index.js"],
 			"#routines": 	["./src/lib/vm/routines.js"],
 			"#polyfills":   ["./src/lib/polyfills/index.js"]
 		}
@@ -24,6 +25,7 @@
 	"ts-node": {
 		"require": ["tsconfig-paths/register"],
 		"transpileOnly": true,
-		"files": true
+		"files": true,
+		"skipIgnore": true
 	}
 }

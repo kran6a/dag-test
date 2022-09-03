@@ -1,7 +1,7 @@
 import {describe, it, beforeEach} from 'mocha';
 import {assert} from 'chai';
 import {db} from "#db";
-import {query_pack} from "#lib/network";
+import {query_pack} from "#network";
 import Pack from "#classes/Pack";
 import {BASE_TOKEN, COMMUNITY_ADDRESS} from "#constants";
 import {GENESIS_ACCOUNT_PRIVKEY} from "#secrets";

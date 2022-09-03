@@ -5,7 +5,7 @@ import make_stable from './state/transitions/make_stable.js';
 import {are_all_parents_known, are_parents_valid, is_sequential, is_pack_known, is_valid_pack_signature} from '#lib/validation';
 import {Mutex} from "async-mutex";
 import {db} from "#db";
-import {broadcast_pack, query_pack} from "#lib/network";
+import {broadcast_pack, query_pack} from "#network";
 import Pack from "#classes/Pack";
 
 const mtx: Mutex = new Mutex(); //Only one pack is processed at a time
