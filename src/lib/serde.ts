@@ -1,9 +1,11 @@
 import {ADDRESS_BYTE_LENGTH, BALANCE_WIDTH_BYTES, MAX_CAP} from "#constants";
 
 
-export const string2buffer = (str: string, encoding: 'utf8' | 'utf-8' | 'binary' | 'base64url' | 'latin1' | 'latin-1' | 'hex'): Uint8Array=>{
+export const string2buffer = (str: string, encoding: 'utf8' | 'utf-8' | 'binary' | 'base64url' | 'hex'): Uint8Array=>{
     if (encoding === 'hex')
-        return new Uint8Array(str.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        { // @ts-ignore
+            return new Uint8Array(str.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        }
     if (encoding === 'base64url'){
         const m: number = str.length % 4;
         // noinspection JSDeprecatedSymbols
@@ -11,7 +13,7 @@ export const string2buffer = (str: string, encoding: 'utf8' | 'utf-8' | 'binary'
     }
     if (encoding === 'binary')
         return new Uint8Array(str.split('').map((x)=>x.charCodeAt(0)));
-    if (encoding === 'utf8' || encoding === 'utf-8')
+    else //(encoding === 'utf8' || encoding === 'utf-8')
         return new TextEncoder().encode(str);
 }
 
@@ -31,7 +33,7 @@ export const buffer2string = (arr: Uint8Array, encoding: 'utf8' | 'utf-8' | 'bin
     return new TextDecoder(encoding === 'utf8' ? 'utf-8' : encoding).decode(arr);
 }
 
-export const reencode_string = (str: string, source_encoding: 'utf8' | 'utf-8' | 'binary' | 'base64url' | 'latin1' | 'latin-1' | 'hex', ourput_encoding: 'utf8' | 'utf-8' | 'binary' | 'base64url' | 'latin1' | 'latin-1' | 'hex'): string=>{
+export const reencode_string = (str: string, source_encoding: 'utf8' | 'utf-8' | 'binary' | 'base64url' | 'hex', ourput_encoding: 'utf8' | 'utf-8' | 'binary' | 'base64url' | 'hex'): string=>{
     return buffer2string(string2buffer(str, source_encoding), ourput_encoding);
 }
 
