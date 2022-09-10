@@ -1,6 +1,6 @@
 import level from 'level-rocksdb';
 import {createHash} from "crypto";
-import {existsSync, rmSync} from "fs";
+import {rmSync, statSync} from "fs";
 import {BALANCE_WIDTH_BITS, BASE_TOKEN, BALANCE_WIDTH_BYTES, BINARY_ZERO, BINARY_ZERO_STRING, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY, GENESIS_BALANCE, MAX_CAP, GENESIS_UNIT_HASH, DB_PARENTHOOD_QUERY_TIMEOUT} from "#constants";
 import Database from 'better-sqlite3';
 import {bigint2word, bin2token, binary2bigint, buffer2string, fromJSON, reencode_string, string2buffer, toBigInt, toJSON} from "#lib/serde";
@@ -13,17 +13,8 @@ import {log} from "#lib/logger";
 import type {Hash} from "crypto";
 import type {Database as Sqlite} from 'better-sqlite3';
 
-const parenthoods_db_path: string = process.env.PARENTHOOD_DB_NAME || './sqlite.db';
-
-let parenthoods: Sqlite;
-
 const _db: RocksDB = level(process.env.DB_NAME || './rocks.db');
-
-export const nuke = async (): Promise<void>=>{
-    await _db.close();
-    rmSync(process.env.DB_NAME || './rocks.db', {recursive: true});
-    await _db.open();
-}
+const _sql: Sqlite | undefined = process.env.RELAY ? new Database(process.env.PARENTHOOD_DB_NAME || './sqlite.db', {timeout: DB_PARENTHOOD_QUERY_TIMEOUT}) : undefined
 
 /**
  * @description Returns the hash of the current DB state. This hash is embedded in milestones so that all nodes can verify that their state is in sync with stabilizers.
@@ -49,9 +40,11 @@ export class DB {
     private put_set: Set<string> = new Set<string>();
     private readonly db: RocksDB;
     private transaction: boolean = false;
+    private parenthoods?: Sqlite;
 
-    constructor(db: RocksDB) {
+    constructor(db: RocksDB, parenthoods?: Sqlite) {
         this.db = db;
+        this.parenthoods = parenthoods;
     }
     put(key: string, value: string): DB | Promise<void>{
         if (!this.transaction)
@@ -60,6 +53,11 @@ export class DB {
         this.put_set.add(key);
         this.cache.set(key, value);
         return this;
+    }
+    get_children_iterator(pack: string): IterableIterator<{New: string}> {
+        if (!this.parenthoods)
+            throw new Error("Your node is not a relay");
+        return this.parenthoods.prepare('SELECT New FROM Parenthoods WHERE Old = (?)').iterate(pack);
     }
     async get(key: string): Promise<string>{ //Does not check for transaction
         if (this.cache.has(key))
@@ -278,24 +276,41 @@ export class DB {
             db.set_support(address, support);    //Update supportee amount
         });
         await this.write();
+        log('DB', "INFO", 'Initialized main db');
+        if (process.env.RELAY){
+            const db_size = statSync(parenthoods_db_path).size;
+            if (!db_size){
+                log('DB', "INFO", 'Initializing parenthood DB');
+                await (<Sqlite>this.parenthoods).exec('CREATE TABLE `Parenthoods` (`Previous` CHAR(32) NOT NULL, `Next` CHAR(32) NOT NULL, PRIMARY KEY (`Previous`, `Next`))');
+                log('DB', "INFO", 'Initialized parenthood db');
+            }
+        }
+    }
+    async close(): Promise<void>{
+        await this.db.close();
     }
 }
-const exp: DB = new DB(_db);
+const exp: DB = new DB(_db, _sql);
 export const db = exp;
 try {
     await _db.get("milestone");
     await sleep(4200);
     await exp.initialize();
-    if (process.env.RELAY){
-        const db_exists: boolean = existsSync(parenthoods_db_path);
-        parenthoods = new Database(parenthoods_db_path, {timeout: DB_PARENTHOOD_QUERY_TIMEOUT});
-        if (!db_exists){
-            await parenthoods.exec('CREATE TABLE `Parenthoods` (\n' +
-                '\t`Previous` TEXT(32) binary NOT NULL,\n' +
-                '\t`Next` TEXT(32) binary NOT NULL,\n' +
-                '\tPRIMARY KEY (`Pack`)\n' +
-                ')');
-            await parenthoods.close();
-        }
-    }
+    process.exit(0);
 } catch (e) {}
+
+process.on('SIGINT', async ()=>{
+    await db.close();
+    process.exit();
+});
+
+export const nuke = async (): Promise<void>=>{
+    await db.close();
+    await _sql?.exec('DELETE FROM `Parenthoods`');
+    try {
+        rmSync(process.env.DB_NAME || './rocks.db', {recursive: true});
+    } catch (e){
+
+    }
+    await _db.open();
+}
