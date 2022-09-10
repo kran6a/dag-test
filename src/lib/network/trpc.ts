@@ -5,7 +5,7 @@ import {observable} from '@trpc/server/observable';
 import {WebSocketServer} from 'ws';
 import {db} from "#db";
 import {buffer2string, string2buffer} from "#lib/serde";
-import {is_ok, is_valid_address, is_valid_base64url} from "#lib/validation";
+import {is_array, is_ok, is_string, is_valid_address, is_valid_base64url} from "#lib/validation";
 import Pack from "#classes/Pack";
 
 export const RPC_SUBSCRIPTIONS = new Map();
@@ -88,7 +88,7 @@ const appRouter = t.router({
     packs: t.procedure
         .subscription(()=>{
             return observable<string>((emit) => {
-                const key = Date.now();
+                const key: number = Date.now();
                 RPC_SUBSCRIPTIONS.set(key, emit.next);
                 return () => RPC_SUBSCRIPTIONS.delete(key);
             });
@@ -96,18 +96,42 @@ const appRouter = t.router({
     leaves: t.procedure
         .query(async () => {
             return await db.get_leaves();
+        }),
+    sync: t.procedure
+        .input(async (val: unknown)=>{
+            if (!is_array(val))
+                throw new TRPCError({code: "BAD_REQUEST", message: "leaves must be an array"});
+            if (!val.every(x=>is_string(x)))
+                throw new TRPCError({code: 'BAD_REQUEST', message: 'leaves must be an string array'})
+            return val;
         })
+        .subscription((req)=>observable<string>((emit)=>{
+                const recurse = async (client_leaves: string[])=>{
+                    const leaves_children = await Promise.all(client_leaves.map(x=>db.get_children_iterator(x)));
+                    for (const children of leaves_children){
+                        for (const pack of children) {
+                            const opt_pack = await db.get_pack(pack.New);
+                            if (!is_ok(opt_pack))
+                                emit.error(new TRPCError({code: 'INTERNAL_SERVER_ERROR', message: opt_pack.err}));
+                            else {
+                                emit.next(buffer2string(opt_pack.ok.binary(), 'binary'));
+                                setImmediate(recurse.bind(null,[pack.New]));
+                            }
+                        }
+                    }
+                }
+            })
+        )
 });
 
 
-const { server, listen } = createHTTPServer({router: appRouter, createContext});
+const { server, listen } = createHTTPServer({router: appRouter, createContext, batching: {enabled: true}});
 const wss = new WebSocketServer({ server });
 
 export type TRPC_ROUTER = typeof appRouter;
-applyWSSHandler<TRPC_ROUTER>({wss, router: appRouter, createContext});
+applyWSSHandler<TRPC_ROUTER>({wss, router: appRouter, createContext, batching: {enabled: true}});
 
 setInterval(() => {
   console.log('Connected clients', wss.clients.size);
 }, 1000);
 listen(2022);
-
