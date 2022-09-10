@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node ./index.ts",
-    "test:all": "ts-mocha -n loader=ts-node/esm.mjs --serial --spec ./test/**/*.spec.ts",
-    "test:api": "ts-mocha -n loader=ts-node/esm.mjs --serial --spec ./routes/**/*.spec.ts",
-    "test:net": "ts-mocha -n loader=ts-node/esm.mjs --serial --spec ./test/net/*.spec.ts"
+    "start": "node --loader=ts-node/esm.mjs ./index.ts",
+    "test:all": "ts-mocha -r dotenv/config -n loader=ts-node/esm.mjs --serial --spec ./test/**/*.spec.ts",
+    "test:api": "ts-mocha -r dotenv/config -n loader=ts-node/esm.mjs --serial --spec ./routes/**/*.spec.ts",
+    "test:net": "ts-mocha -r dotenv/config -n loader=ts-node/esm.mjs --serial --spec ./test/net/*.spec.ts"
   },
+  "exports": ["./index.ts"],
   "imports": {
     "#lib/*": "./src/lib/*.js",
     "#routes/*": "./routes/*.js",
@@ -24,8 +25,10 @@
     "@trpc/client": "next",
     "@trpc/server": "next",
     "@types/better-sqlite3": "^7.6.0",
+    "@types/dotenv": "^8.2.0",
     "async-mutex": "^0.3.2",
     "better-sqlite3": "^7.6.2",
+    "dotenv": "^16.0.2",
     "express": "^4.18.1",
     "express-file-router": "github:kran6a/express-file-router",
     "ipfs-http-client": "^57.0.3",
