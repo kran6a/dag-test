@@ -1,12 +1,23 @@
-import {BASE_TOKEN, TRANSITION_TYPES} from "#constants";
+import {BASE_TOKEN, DB_MAX_SQL_RETRIES, DB_PARENTHOOD_QUERY_TIMEOUT, TRANSITION_TYPES} from "#constants";
 import {toJSON} from "#lib/serde";
 import get_stabilization_chain, {get_dag_weight} from './state/stabilization_chain.js';
 import make_stable from './state/transitions/make_stable.js';
-import {are_all_parents_known, are_parents_valid, is_sequential, is_pack_known, is_valid_pack_signature} from '#lib/validation';
+import {
+    are_all_parents_known,
+    are_parents_valid,
+    is_sequential,
+    is_pack_known,
+    is_valid_pack_signature,
+    is_ok
+} from '#lib/validation';
 import {Mutex} from "async-mutex";
 import {db} from "#db";
 import {broadcast_pack, query_pack} from "#network";
 import Pack from "#classes/Pack";
+import Database from "better-sqlite3";
+import type {Database as Sqlite} from 'better-sqlite3';
+import retry from "./functional/retry";
+const parenthoods: Sqlite = new Database(process.env.PARENTHOOD_DB_NAME || './sqlite.db', {timeout: DB_PARENTHOOD_QUERY_TIMEOUT});
 
 const mtx: Mutex = new Mutex(); //Only one pack is processed at a time
 
@@ -108,6 +119,11 @@ const wrapper = async (bin: Uint8Array, {processing_parent, relay}: {processing_
             db.batch();
             await mtx.runExclusive(handler.bind(null, pack));
             await db.write();
+            if (process.env.RELAY) { //Store parenthoods
+                const opt = await retry(() => Promise.all(pack.r_parents.map(x=>parenthoods.prepare('INSERT INTO Parenthoods (?, ?)').run(x, pack.r_hash))));
+                if (!is_ok(opt))
+                    return opt;
+            }
         }
         relay && setImmediate(()=>broadcast_pack(pack));
         return {ok: <string>pack.r_hash};

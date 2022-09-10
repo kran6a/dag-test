@@ -1,6 +1,7 @@
 export * from './ipfs.js';
 export * from './network.js';
 export * from './protocol.js';
+export * from './db.js';
 
 export const GENESIS_UNIT_HASH: string = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' as const;
 export const BINARY_ZERO_STRING: '\x00' = '\x00' as const;

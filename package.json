@@ -23,7 +23,9 @@
   "dependencies": {
     "@trpc/client": "next",
     "@trpc/server": "next",
+    "@types/better-sqlite3": "^7.6.0",
     "async-mutex": "^0.3.2",
+    "better-sqlite3": "^7.6.2",
     "express": "^4.18.1",
     "express-file-router": "github:kran6a/express-file-router",
     "ipfs-http-client": "^57.0.3",

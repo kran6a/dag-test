@@ -1,0 +1,2 @@
+export const DB_PARENTHOOD_QUERY_TIMEOUT: 5000 = 5000;
+export const DB_MAX_SQL_RETRIES: 5 = 5;

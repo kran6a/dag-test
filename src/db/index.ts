@@ -1,7 +1,8 @@
 import level from 'level-rocksdb';
 import {createHash} from "crypto";
-import {rmSync} from "fs";
-import {BALANCE_WIDTH_BITS, BASE_TOKEN, BALANCE_WIDTH_BYTES, BINARY_ZERO, BINARY_ZERO_STRING, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY, GENESIS_BALANCE, MAX_CAP, GENESIS_UNIT_HASH} from "#constants";
+import {existsSync, rmSync} from "fs";
+import {BALANCE_WIDTH_BITS, BASE_TOKEN, BALANCE_WIDTH_BYTES, BINARY_ZERO, BINARY_ZERO_STRING, GENESIS_ACCOUNT_ADDRESS, GENESIS_ACCOUNT_PUBKEY, GENESIS_BALANCE, MAX_CAP, GENESIS_UNIT_HASH, DB_PARENTHOOD_QUERY_TIMEOUT} from "#constants";
+import Database from 'better-sqlite3';
 import {bigint2word, bin2token, binary2bigint, buffer2string, fromJSON, reencode_string, string2buffer, toBigInt, toJSON} from "#lib/serde";
 import Pack from "#classes/Pack";
 import Token from "#classes/Token";
@@ -10,6 +11,11 @@ import Issue from "#classes/Issue";
 import {sleep} from "#lib/utils";
 import {log} from "#lib/logger";
 import type {Hash} from "crypto";
+import type {Database as Sqlite} from 'better-sqlite3';
+
+const parenthoods_db_path: string = process.env.PARENTHOOD_DB_NAME || './sqlite.db';
+
+let parenthoods: Sqlite;
 
 const _db: RocksDB = level(process.env.DB_NAME || './rocks.db');
 
@@ -280,4 +286,16 @@ try {
     await _db.get("milestone");
     await sleep(4200);
     await exp.initialize();
+    if (process.env.RELAY){
+        const db_exists: boolean = existsSync(parenthoods_db_path);
+        parenthoods = new Database(parenthoods_db_path, {timeout: DB_PARENTHOOD_QUERY_TIMEOUT});
+        if (!db_exists){
+            await parenthoods.exec('CREATE TABLE `Parenthoods` (\n' +
+                '\t`Previous` TEXT(32) binary NOT NULL,\n' +
+                '\t`Next` TEXT(32) binary NOT NULL,\n' +
+                '\tPRIMARY KEY (`Pack`)\n' +
+                ')');
+            await parenthoods.close();
+        }
+    }
 } catch (e) {}
