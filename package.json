@@ -8,7 +8,9 @@
     "test:api": "ts-mocha -r dotenv/config -n loader=ts-node/esm.mjs --serial --spec ./routes/**/*.spec.ts",
     "test:net": "ts-mocha -r dotenv/config -n loader=ts-node/esm.mjs --serial --spec ./test/net/*.spec.ts"
   },
-  "exports": ["./index.ts"],
+  "exports": [
+    "./index.ts"
+  ],
   "imports": {
     "#lib/*": "./src/lib/*.js",
     "#routes/*": "./routes/*.js",
@@ -25,7 +27,6 @@
     "@trpc/client": "next",
     "@trpc/server": "next",
     "@types/better-sqlite3": "^7.6.0",
-    "@types/dotenv": "^8.2.0",
     "async-mutex": "^0.3.2",
     "better-sqlite3": "^7.6.2",
     "dotenv": "^16.0.2",
