@@ -104,7 +104,7 @@ const handler = async (pack: Pack): Promise<void>=>{
 const wrapper = async (bin: Uint8Array, {processing_parent, relay}: {processing_parent?: boolean, relay?: boolean} = {processing_parent: false, relay: false}): RET_TYPE=>{
     const pack: Pack = Pack.from_binary(bin);
     if (await is_pack_known(<string>pack.r_hash))
-        throw new Error("Duplicate pack");
+        return {err: "Duplicate pack"};
     try {
         if (processing_parent)
             await handler(pack);
@@ -114,7 +114,7 @@ const wrapper = async (bin: Uint8Array, {processing_parent, relay}: {processing_
             await db.write();
             if (process.env.RELAY) { //Store parenthoods
                 const opt = await retry(() => Promise.all(pack.r_parents.map(x=>parenthoods.prepare('INSERT INTO Parenthoods (Previous, Next) VALUES (?, ?)').run(x, pack.r_hash))));
-                console.log({opt});
+                console.log("Storing parenthood", opt.ok);
                 if (!is_ok(opt))
                     return opt;
             }

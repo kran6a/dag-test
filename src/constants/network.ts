@@ -1,4 +1,4 @@
-export const API_HOST: 'localhost' = 'localhost';
+export const API_HOST: '127.0.0.1' = '127.0.0.1';
 export const API_PORT: 4009 = 4009;
 export const API_PASSWORD: string = 'change_me'; //Set to empty string ('') to disable endpoints that require a private key (i.e: sending a payment)
 

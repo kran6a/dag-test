@@ -11,8 +11,8 @@ export async function get(){
     const packs: Pack[] = [];
     const already_added: Set<string> = new Set<string>();
     const add_pack = async (pack: Pack)=>{
-        if (!already_added.has(pack.r_hash)) {
-            already_added.add(pack.r_hash);
+        if (!already_added.has(<string>pack.r_hash)) {
+            already_added.add(<string>pack.r_hash);
             packs.push(pack);
         }
         await Promise.all(pack?.r_parents?.map(async x=>add_pack(await db.get_pack(x).then(x=>x.ok))) || []);

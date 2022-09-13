@@ -12,11 +12,11 @@ export const ipfs = await create({url: IPFS_HTTP_API_URL, agent: new Agent({ kee
 console.info("IPFS started");
 
 await ipfs.pubsub.subscribe(`${IPFS_NETWORK_ID}-pack`, async (msg)=>{
-    log("Network", 'INFO', `We received a pack from the network with hash ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);
+    log("Network:IPFS", 'INFO', `We received a pack from the network with hash ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);
     await handle_incoming_pack(msg.data);
 });
 await ipfs.pubsub.subscribe(`${IPFS_NETWORK_ID}-query`, async (msg)=>{
-    log("Network", 'INFO', `We got queried for ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);
+    log("Network:IPFS", 'INFO', `We got queried for ${buffer2string(msg.data.slice(0, 32), 'base64url')}`);
     const pack_hash: string = buffer2string(msg.data, 'base64url');
     const pack: Option<Pack> = await db.get_pack(pack_hash);
     return is_ok(pack) && ipfs.pubsub.publish(`${IPFS_NETWORK_ID}-${pack_hash}`, pack.ok.binary());

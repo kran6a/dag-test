@@ -38,7 +38,7 @@ export const query_pack = async (hash: string): Promise<Pack>=>{
 export const broadcast_pack = (pack: Pack)=>{
     log("Network", 'INFO', `Broadcasting pack ${pack.r_hash}`);
     const serialized: Uint8Array = pack.binary();
-    const string = buffer2string(serialized, 'binary');
+    const string: string = buffer2string(serialized, 'binary');
     [...RPC_SUBSCRIPTIONS.values()].forEach(emit=>emit(string));
     return Promise.all([
         ipfs.pubsub.publish(`${IPFS_NETWORK_ID}-pack`, serialized),
