@@ -3,8 +3,8 @@ import createRouter from "express-file-router";
 import {resolve} from 'path';
 import {API_HOST, API_PORT, API_PROTOCOL} from "#constants";
 import cors from "./decorators/cors.js";
-import polyfills from "./src/lib/polyfills";
-import {TRPC_ROUTER} from "./src/lib/network";
+import polyfills from "#polyfills";
+export type {TRPC_ROUTER} from "#network";
 import * as dotenv from 'dotenv';
 dotenv.config();
 Error.stackTraceLimit = Infinity;
@@ -15,5 +15,3 @@ await createRouter(app, {directory: resolve('./routes'), afterware: [cors]})
 
 app.listen(API_PORT, API_HOST);
 console.info(`Server listening at ${API_PROTOCOL}://${API_HOST}:${API_PORT}`);
-
-export default TRPC_ROUTER;
