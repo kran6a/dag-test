@@ -80,9 +80,10 @@ const appRouter = t.router({
                 throw new TRPCError({code: 'BAD_REQUEST', message: 'malformed pack'});
             }
         })
-        .mutation((payload)=>{
+        .mutation(async (payload)=>{
             const hydrated_pack: Pack = Pack.from_binary(string2buffer(payload.input, 'binary'));
-            return hydrated_pack.submit();
+            const opt: Option<string> = await hydrated_pack.submit();
+            return opt;
         }),
     packs: t.procedure
         .subscription(()=>{
