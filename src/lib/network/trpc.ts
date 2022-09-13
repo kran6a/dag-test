@@ -80,12 +80,9 @@ const appRouter = t.router({
                 throw new TRPCError({code: 'BAD_REQUEST', message: 'malformed pack'});
             }
         })
-        .mutation(async (payload)=>{
+        .mutation((payload)=>{
             const hydrated_pack: Pack = Pack.from_binary(string2buffer(payload.input, 'binary'));
-            const response = await hydrated_pack.submit();
-            if (is_ok(response))
-                return response.ok;
-            throw new TRPCError({code: 'INTERNAL_SERVER_ERROR', message: 'the pack was rejected by the protocol'});
+            return hydrated_pack.submit();
         }),
     packs: t.procedure
         .subscription(()=>{
