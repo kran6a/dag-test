@@ -74,13 +74,15 @@ const appRouter = t.router({
             if (typeof val !== "string")
                 throw new TRPCError({code: 'BAD_REQUEST'});
             try {
-                return Pack.from_binary(string2buffer(val, 'binary'));
+                Pack.from_binary(string2buffer(val, 'binary'));
+                return val;
             } catch (e){
                 throw new TRPCError({code: 'BAD_REQUEST', message: 'malformed pack'});
             }
         })
         .mutation(async (payload)=>{
-            const response = await payload.input.submit();
+            const hydrated_pack: Pack = Pack.from_binary(string2buffer(payload.input, 'binary'));
+            const response = await hydrated_pack.submit();
             if (is_ok(response))
                 return response.ok;
             throw new TRPCError({code: 'INTERNAL_SERVER_ERROR', message: 'the pack was rejected by the protocol'});
