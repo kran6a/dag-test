@@ -1,7 +1,7 @@
 import {inferAsyncReturnType, initTRPC, TRPCError} from '@trpc/server';
 import {CreateHTTPContextOptions, createHTTPServer} from '@trpc/server/adapters/standalone';
 import {applyWSSHandler, CreateWSSContextFnOptions} from '@trpc/server/adapters/ws';
-import {observable} from '@trpc/server/observable';
+import {observable, Observer} from '@trpc/server/observable';
 import {WebSocketServer} from 'ws';
 import {db} from "#db";
 import {buffer2string, string2buffer} from "#lib/serde";
@@ -43,34 +43,35 @@ const accountRouter = t.router({
 const appRouter = t.router({
     account: accountRouter,
     token: t.procedure
-        .input((val: unknown)=>{
+        .input((val: unknown): string=>{
             if (val === 'base' || is_valid_base64url(val))
                 return val;
             throw new TRPCError({code: 'BAD_REQUEST', message: 'invalid token hash'});
         })
-        .query(async (query)=>{
-            const reponse = await db.get_token(query.input);
-            if (!reponse.ok)
+        .query(async (query): (Promise<Option<{ hash: string, cap: bigint, burnable: boolean, issuers: string[], supply: bigint }, string>>)=>{
+            const response = await db.get_token(query.input);
+            if (!response.ok)
                 throw new TRPCError({code: 'NOT_FOUND'});
+            return response;
         }),
     stabilizers: t.procedure.query(async ()=>{
         const stabilizers = await db.get_stabilizers();
         return Object.fromEntries(stabilizers.entries());
     }),
     pack: t.procedure
-        .input((val: unknown)=>{
+        .input((val: unknown): string=>{
             if (typeof val === "string")
                 return val;
             return '';
         })
-        .query(async (query)=>{
+        .query(async (query): Promise<string>=>{
             const pack = await db.get_pack(query.input);
             if (!pack.ok)
                 throw new TRPCError({code: 'NOT_FOUND'});
             return buffer2string(pack.ok?.binary(), 'binary')
         }),
     submit: t.procedure
-        .input((val)=>{
+        .input((val): string=>{
             if (typeof val !== "string")
                 throw new TRPCError({code: 'BAD_REQUEST'});
             try {
@@ -80,10 +81,9 @@ const appRouter = t.router({
                 throw new TRPCError({code: 'BAD_REQUEST', message: 'malformed pack'});
             }
         })
-        .mutation(async (payload)=>{
+        .mutation((payload): (Promise<Option<string>>)=>{
             const hydrated_pack: Pack = Pack.from_binary(string2buffer(payload.input, 'binary'));
-            const opt: Option<string> = await hydrated_pack.submit();
-            return opt;
+            return <Promise<Option<string>>>hydrated_pack.submit();
         }),
     packs: t.procedure
         .subscription(()=>{
@@ -94,18 +94,16 @@ const appRouter = t.router({
             });
         }),
     leaves: t.procedure
-        .query(async () => {
-            return await db.get_leaves();
-        }),
+        .query(async (): Promise<string[]>=>db.get_leaves()),
     sync: t.procedure
-        .input(async (val: unknown)=>{
+        .input((val: unknown): string[]=>{
             if (!is_array(val))
                 throw new TRPCError({code: "BAD_REQUEST", message: "leaves must be an array"});
             if (!val.every(x=>is_string(x)))
                 throw new TRPCError({code: 'BAD_REQUEST', message: 'leaves must be an string array'})
             return val;
         })
-        .subscription((req)=>observable<string>((emit)=>{
+        .subscription((req)=>observable<string>((emit: Observer<string, TRPCError>)=>{
                 const recurse = async (client_leaves: string[])=>{
                     const leaves_children = await Promise.all(client_leaves.map(x=>db.get_children_iterator(x)));
                     for (const children of leaves_children){
