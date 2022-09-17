@@ -1,0 +1,1 @@
+export const TRPC_CLIENT_LOGGING_INTERVAL: number = 60000;

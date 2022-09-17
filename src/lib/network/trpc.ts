@@ -7,6 +7,8 @@ import {db} from "#db";
 import {buffer2string, string2buffer} from "#lib/serde";
 import {is_array, is_ok, is_string, is_valid_address, is_valid_base64url} from "#lib/validation";
 import Pack from "#classes/Pack";
+import {log} from "#lib/logger";
+import {TRPC_CLIENT_LOGGING_INTERVAL} from '#constants';
 
 export const RPC_SUBSCRIPTIONS = new Map();
 
@@ -129,7 +131,5 @@ const wss = new WebSocketServer({ server });
 export type TRPC_ROUTER = typeof appRouter;
 applyWSSHandler<TRPC_ROUTER>({wss, router: appRouter, createContext, batching: {enabled: true}});
 
-setInterval(() => {
-  console.log('Connected clients', wss.clients.size);
-}, 1000);
+setInterval(() => log('Network:trpc', 'INFO', `Connected clients: ${wss.clients.size}`), TRPC_CLIENT_LOGGING_INTERVAL);
 listen(2022);
