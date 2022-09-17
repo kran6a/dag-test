@@ -264,24 +264,24 @@ export class DB {
         await nuke();
         this.batch();
         const genesis_pack = DB.genesis_pack();
-        this.put('leaves', JSON.stringify([genesis_pack.r_hash]));
+        await this.put('leaves', JSON.stringify([genesis_pack.r_hash]));
         const stabilizer_arr: {address: string, support: bigint}[] = Object.entries(stabilizers).map(([pubkey, support])=>({address: createHash('sha256').update(pubkey, 'hex').digest('hex'), support}));
-        this.set_stabilizers(stabilizer_arr);
+        await this.set_stabilizers(stabilizer_arr);
         new Account(Object.keys(stabilizers)).apply();
         new Token([{cap: GENESIS_BALANCE, issuers: [GENESIS_ACCOUNT_ADDRESS], burnable: false, nonce: 0x00}]).apply(<Pack>{r_hash: GENESIS_UNIT_HASH});
         await new Issue({[BASE_TOKEN]: balances}).apply(genesis_pack);
-        this.put('milestone', <string>genesis_pack.r_hash);
-        stabilizer_arr.map(({address, support})=>{
+        await this.put('milestone', <string>genesis_pack.r_hash);
+        await Promise.all(stabilizer_arr.map(({address, support})=>{
             db.set_staked_to(address, address, support);//Update supporter amount
             db.set_support(address, support);    //Update supportee amount
-        });
+        }));
         await this.write();
         log('DB', "INFO", 'Initialized main db');
         if (process.env.RELAY){
-            const db_size = statSync(parenthoods_db_path).size;
+            const db_size = statSync(process.env.PARENTHOOD_DB_NAME || './sqlite.db').size;
             if (!db_size){
                 log('DB', "INFO", 'Initializing parenthood DB');
-                await (<Sqlite>this.parenthoods).exec('CREATE TABLE `Parenthoods` (`Previous` CHAR(32) NOT NULL, `Next` CHAR(32) NOT NULL, PRIMARY KEY (`Previous`, `Next`))');
+                const response = await (<Sqlite>this.parenthoods).exec('CREATE TABLE `Parenthoods` (`Previous` CHAR(32) NOT NULL, `Next` CHAR(32) NOT NULL, PRIMARY KEY (`Previous`, `Next`))');
                 log('DB', "INFO", 'Initialized parenthood db');
             }
         }
@@ -292,25 +292,24 @@ export class DB {
 }
 const exp: DB = new DB(_db, _sql);
 export const db = exp;
+
+export const nuke = async (): Promise<void>=>{
+    await db.close();
+    try {
+        await _sql?.exec('DELETE FROM `Parenthoods`');
+        rmSync(process.env.DB_NAME || './rocks.db', {recursive: true});
+    } catch (e){}
+    await _db.open();
+}
+
 try {
     await _db.get("milestone");
+} catch (e) {
     await sleep(4200);
     await exp.initialize();
-    process.exit(0);
-} catch (e) {}
+}
 
 process.on('SIGINT', async ()=>{
     await db.close();
     process.exit();
 });
-
-export const nuke = async (): Promise<void>=>{
-    await db.close();
-    await _sql?.exec('DELETE FROM `Parenthoods`');
-    try {
-        rmSync(process.env.DB_NAME || './rocks.db', {recursive: true});
-    } catch (e){
-
-    }
-    await _db.open();
-}

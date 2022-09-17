@@ -1,4 +1,5 @@
 export * from './ipfs.js';
+export * from './trpc.js';
 export * from './network.js';
 export * from './protocol.js';
 export * from './db.js';
